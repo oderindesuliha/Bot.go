@@ -5,7 +5,6 @@ import (
 	"time"
 )
 
-// FormatDuration formats a duration in a human-readable way
 func FormatDuration(d time.Duration) string {
 	if d.Hours() >= 24 {
 		days := int(d.Hours() / 24)
@@ -22,7 +21,6 @@ func FormatDuration(d time.Duration) string {
 	}
 }
 
-// formatWithUnit formats a number with its unit, pluralizing if necessary
 func formatWithUnit(value int, unit string) string {
 	if value == 1 {
 		return fmt.Sprintf("%d %s", value, unit)
@@ -30,7 +28,6 @@ func formatWithUnit(value int, unit string) string {
 	return fmt.Sprintf("%d %ss", value, unit)
 }
 
-// ContainsString checks if a string slice contains a specific string
 func ContainsString(slice []string, s string) bool {
 	for _, item := range slice {
 		if item == s {
@@ -40,7 +37,6 @@ func ContainsString(slice []string, s string) bool {
 	return false
 }
 
-// RemoveString removes a string from a slice
 func RemoveString(slice []string, s string) []string {
 	result := make([]string, 0)
 	for _, item := range slice {
@@ -51,7 +47,6 @@ func RemoveString(slice []string, s string) []string {
 	return result
 }
 
-// FormatTimeLeft formats the time left until a given end time
 func FormatTimeLeft(endTime time.Time) string {
 	duration := time.Until(endTime)
 	if duration <= 0 {
@@ -71,7 +66,6 @@ func FormatTimeLeft(endTime time.Time) string {
 	}
 }
 
-// formatDays formats days and hours
 func formatDays(days, hours int) string {
 	if days == 1 {
 		if hours == 1 {
@@ -92,7 +86,6 @@ func formatDays(days, hours int) string {
 	}
 }
 
-// formatHours formats hours and minutes
 func formatHours(hours, minutes int) string {
 	if hours == 1 {
 		if minutes == 1 {
@@ -113,7 +106,6 @@ func formatHours(hours, minutes int) string {
 	}
 }
 
-// formatMinutes formats minutes
 func formatMinutes(minutes int) string {
 	if minutes == 1 {
 		return "1 minute"
@@ -122,7 +114,6 @@ func formatMinutes(minutes int) string {
 	}
 }
 
-// pluralize returns the plural form of a word if count is not 1
 func pluralize(count int, word string) string {
 	if count == 1 {
 		return "1 " + word
