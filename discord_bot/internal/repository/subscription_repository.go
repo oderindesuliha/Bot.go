@@ -27,10 +27,10 @@ type SubscriptionRepository interface {
 
 // InMemorySubscriptionRepository implements SubscriptionRepository using in-memory storage
 type InMemorySubscriptionRepository struct {
-	subscriptions map[string]*models.Subscription
-	channels      map[string]*models.ChannelConfig
-	webhooks      map[string]*models.WebhookRegistration
-	mutex         sync.RWMutex
+    subscriptions map[string]*models.Subscription
+    channels      map[string]*models.ChannelConfig
+    webhooks      map[string]*models.WebhookRegistration
+    mutex         sync.RWMutex
 }
 
 // NewInMemorySubscriptionRepository creates a new in-memory subscription repository
@@ -43,11 +43,11 @@ func NewInMemorySubscriptionRepository() *InMemorySubscriptionRepository {
 }
 
 // GetSubscription retrieves a subscription by Discord user ID
-func (r *InMemorySubscriptionRepository) GetSubscription(discordUserID string) (*models.Subscription, error) {
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
+func (repo *InMemorySubscriptionRepository) GetSubscription(discordUserID string) (*models.Subscription, error) {
+    repo.mutex.RLock()
+    defer repo.mutex.RUnlock()
 
-	subscription, exists := r.subscriptions[discordUserID]
+    subscription, exists := repo.subscriptions[discordUserID]
 	if !exists {
 		// Return empty subscription if not found
 		return &models.Subscription{
@@ -57,46 +57,46 @@ func (r *InMemorySubscriptionRepository) GetSubscription(discordUserID string) (
 		}, nil
 	}
 
-	return subscription, nil
+    return subscription, nil
 }
 
 // SaveSubscription saves a subscription
-func (r *InMemorySubscriptionRepository) SaveSubscription(subscription *models.Subscription) error {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+func (repo *InMemorySubscriptionRepository) SaveSubscription(subscription *models.Subscription) error {
+    repo.mutex.Lock()
+    defer repo.mutex.Unlock()
 
-	r.subscriptions[subscription.DiscordUserID] = subscription
-	return nil
+    repo.subscriptions[subscription.DiscordUserID] = subscription
+    return nil
 }
 
 // DeleteSubscription deletes a subscription
-func (r *InMemorySubscriptionRepository) DeleteSubscription(discordUserID string) error {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+func (repo *InMemorySubscriptionRepository) DeleteSubscription(discordUserID string) error {
+    repo.mutex.Lock()
+    defer repo.mutex.Unlock()
 
-	delete(r.subscriptions, discordUserID)
-	return nil
+    delete(repo.subscriptions, discordUserID)
+    return nil
 }
 
 // GetAllSubscriptions retrieves all subscriptions
-func (r *InMemorySubscriptionRepository) GetAllSubscriptions() ([]*models.Subscription, error) {
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
+func (repo *InMemorySubscriptionRepository) GetAllSubscriptions() ([]*models.Subscription, error) {
+    repo.mutex.RLock()
+    defer repo.mutex.RUnlock()
 
-	subscriptions := make([]*models.Subscription, 0, len(r.subscriptions))
-	for _, subscription := range r.subscriptions {
-		subscriptions = append(subscriptions, subscription)
-	}
+    subscriptions := make([]*models.Subscription, 0, len(repo.subscriptions))
+    for _, subscription := range repo.subscriptions {
+        subscriptions = append(subscriptions, subscription)
+    }
 
 	return subscriptions, nil
 }
 
 // GetChannelConfig retrieves a channel configuration by channel ID
-func (r *InMemorySubscriptionRepository) GetChannelConfig(channelID string) (*models.ChannelConfig, error) {
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
+func (repo *InMemorySubscriptionRepository) GetChannelConfig(channelID string) (*models.ChannelConfig, error) {
+    repo.mutex.RLock()
+    defer repo.mutex.RUnlock()
 
-	config, exists := r.channels[channelID]
+    config, exists := repo.channels[channelID]
 	if !exists {
 		// Return default config if not found
 		return &models.ChannelConfig{
@@ -108,46 +108,46 @@ func (r *InMemorySubscriptionRepository) GetChannelConfig(channelID string) (*mo
 		}, nil
 	}
 
-	return config, nil
+    return config, nil
 }
 
 // SaveChannelConfig saves a channel configuration
-func (r *InMemorySubscriptionRepository) SaveChannelConfig(config *models.ChannelConfig) error {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+func (repo *InMemorySubscriptionRepository) SaveChannelConfig(config *models.ChannelConfig) error {
+    repo.mutex.Lock()
+    defer repo.mutex.Unlock()
 
-	r.channels[config.ChannelID] = config
-	return nil
+    repo.channels[config.ChannelID] = config
+    return nil
 }
 
 // GetAllChannelConfigs retrieves all channel configurations
-func (r *InMemorySubscriptionRepository) GetAllChannelConfigs() ([]*models.ChannelConfig, error) {
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
+func (repo *InMemorySubscriptionRepository) GetAllChannelConfigs() ([]*models.ChannelConfig, error) {
+    repo.mutex.RLock()
+    defer repo.mutex.RUnlock()
 
-	configs := make([]*models.ChannelConfig, 0, len(r.channels))
-	for _, config := range r.channels {
-		configs = append(configs, config)
-	}
+    configs := make([]*models.ChannelConfig, 0, len(repo.channels))
+    for _, config := range repo.channels {
+        configs = append(configs, config)
+    }
 
 	return configs, nil
 }
 
 // SaveWebhookRegistration stores or updates a webhook registration
-func (r *InMemorySubscriptionRepository) SaveWebhookRegistration(registration *models.WebhookRegistration) error {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+func (repo *InMemorySubscriptionRepository) SaveWebhookRegistration(registration *models.WebhookRegistration) error {
+    repo.mutex.Lock()
+    defer repo.mutex.Unlock()
 
-	r.webhooks[registration.ID] = registration
-	return nil
+    repo.webhooks[registration.ID] = registration
+    return nil
 }
 
 // GetWebhookRegistration retrieves a webhook registration by id
-func (r *InMemorySubscriptionRepository) GetWebhookRegistration(id string) (*models.WebhookRegistration, error) {
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
+func (repo *InMemorySubscriptionRepository) GetWebhookRegistration(id string) (*models.WebhookRegistration, error) {
+    repo.mutex.RLock()
+    defer repo.mutex.RUnlock()
 
-	reg, exists := r.webhooks[id]
+    reg, exists := repo.webhooks[id]
 	if !exists {
 		return nil, nil
 	}
@@ -155,37 +155,37 @@ func (r *InMemorySubscriptionRepository) GetWebhookRegistration(id string) (*mod
 }
 
 // DeleteWebhookRegistration deletes a webhook registration by id
-func (r *InMemorySubscriptionRepository) DeleteWebhookRegistration(id string) error {
-	r.mutex.Lock()
-	defer r.mutex.Unlock()
+func (repo *InMemorySubscriptionRepository) DeleteWebhookRegistration(id string) error {
+    repo.mutex.Lock()
+    defer repo.mutex.Unlock()
 
-	delete(r.webhooks, id)
-	return nil
+    delete(repo.webhooks, id)
+    return nil
 }
 
 // GetAllWebhookRegistrations returns all webhook registrations
-func (r *InMemorySubscriptionRepository) GetAllWebhookRegistrations() ([]*models.WebhookRegistration, error) {
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
+func (repo *InMemorySubscriptionRepository) GetAllWebhookRegistrations() ([]*models.WebhookRegistration, error) {
+    repo.mutex.RLock()
+    defer repo.mutex.RUnlock()
 
-	regs := make([]*models.WebhookRegistration, 0, len(r.webhooks))
-	for _, reg := range r.webhooks {
-		regs = append(regs, reg)
-	}
+    regs := make([]*models.WebhookRegistration, 0, len(repo.webhooks))
+    for _, reg := range repo.webhooks {
+        regs = append(regs, reg)
+    }
 
 	return regs, nil
 }
 
 // GetWebhookRegistrationsByChannel returns registrations for a specific channel
-func (r *InMemorySubscriptionRepository) GetWebhookRegistrationsByChannel(channelID string) ([]*models.WebhookRegistration, error) {
-	r.mutex.RLock()
-	defer r.mutex.RUnlock()
+func (repo *InMemorySubscriptionRepository) GetWebhookRegistrationsByChannel(channelID string) ([]*models.WebhookRegistration, error) {
+    repo.mutex.RLock()
+    defer repo.mutex.RUnlock()
 
-	regs := []*models.WebhookRegistration{}
-	for _, reg := range r.webhooks {
-		if reg.ChannelID == channelID {
-			regs = append(regs, reg)
-		}
-	}
-	return regs, nil
+    regs := []*models.WebhookRegistration{}
+    for _, reg := range repo.webhooks {
+        if reg.ChannelID == channelID {
+            regs = append(regs, reg)
+        }
+    }
+    return regs, nil
 }

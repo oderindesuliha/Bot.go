@@ -151,7 +151,7 @@ func (h *WebhookHandler) HandleNewMarket(w http.ResponseWriter, r *http.Request)
 		return
 	}
 
-	body, err := io.ReadAll(r.Body)
+	requestBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		h.logger.Error(fmt.Sprintf("Failed to read request body: %v", err))
 		http.Error(w, `{"error": "Failed to read request body"}`, http.StatusBadRequest)
@@ -163,7 +163,7 @@ func (h *WebhookHandler) HandleNewMarket(w http.ResponseWriter, r *http.Request)
 		Market    models.Market `json:"market"`
 	}
 
-	if err := json.Unmarshal(body, &payload); err != nil {
+	if err := json.Unmarshal(requestBody, &payload); err != nil {
 		h.logger.Error(fmt.Sprintf("Failed to parse JSON: %v", err))
 		http.Error(w, `{"error": "Invalid JSON"}`, http.StatusBadRequest)
 		return
@@ -195,7 +195,7 @@ func (h *WebhookHandler) HandleMarketUpdate(w http.ResponseWriter, r *http.Reque
 		return
 	}
 
-	body, err := io.ReadAll(r.Body)
+	requestBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		h.logger.Error(fmt.Sprintf("Failed to read request body: %v", err))
 		http.Error(w, `{"error": "Failed to read request body"}`, http.StatusBadRequest)
@@ -207,7 +207,7 @@ func (h *WebhookHandler) HandleMarketUpdate(w http.ResponseWriter, r *http.Reque
 		Market    models.Market `json:"market"`
 	}
 
-	if err := json.Unmarshal(body, &payload); err != nil {
+	if err := json.Unmarshal(requestBody, &payload); err != nil {
 		h.logger.Error(fmt.Sprintf("Failed to parse JSON: %v", err))
 		http.Error(w, `{"error": "Invalid JSON"}`, http.StatusBadRequest)
 		return
@@ -568,12 +568,12 @@ func (h *WebhookHandler) HandleEventTradingStart(w http.ResponseWriter, r *http.
 		http.Error(w, `{"error": "Method not allowed"}`, http.StatusMethodNotAllowed)
 		return
 	}
-	body, err := io.ReadAll(r.Body)
+	requestBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, `{"error": "Failed to read request body"}`, http.StatusBadRequest)
 		return
 	}
-	var payload struct {
+	var eventPayload struct {
 		MarketID      string   `json:"market_id"`
 		Title         string   `json:"title"`
 		Description   string   `json:"description"`
@@ -582,14 +582,14 @@ func (h *WebhookHandler) HandleEventTradingStart(w http.ResponseWriter, r *http.
 		Outcomes      []string `json:"outcomes"`
 		Link          string   `json:"link"`
 	}
-	if err := json.Unmarshal(body, &payload); err != nil {
+	if err := json.Unmarshal(requestBody, &eventPayload); err != nil {
 		http.Error(w, `{"error": "Invalid JSON"}`, http.StatusBadRequest)
 		return
 	}
-	market := models.Market{ID: payload.MarketID, Title: payload.Title, Description: payload.Description, Outcomes: payload.Outcomes, Link: payload.Link}
-	msg := h.marketService.CreateTradingStartMessage(&market)
-	h.sendToSubscribedChannels(msg, &market)
-	h.sendToSubscribedUsers(msg, &market)
+	market := models.Market{ID: eventPayload.MarketID, Title: eventPayload.Title, Description: eventPayload.Description, Outcomes: eventPayload.Outcomes, Link: eventPayload.Link}
+	messageBody := h.marketService.CreateTradingStartMessage(&market)
+	h.sendToSubscribedChannels(messageBody, &market)
+	h.sendToSubscribedUsers(messageBody, &market)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted)
 	w.Write([]byte(`{"accepted": true}`))
@@ -604,12 +604,12 @@ func (h *WebhookHandler) HandleEventTradingEnd(w http.ResponseWriter, r *http.Re
 		http.Error(w, `{"error": "Method not allowed"}`, http.StatusMethodNotAllowed)
 		return
 	}
-	body, err := io.ReadAll(r.Body)
+	requestBody, err := io.ReadAll(r.Body)
 	if err != nil {
 		http.Error(w, `{"error": "Failed to read request body"}`, http.StatusBadRequest)
 		return
 	}
-	var payload struct {
+	var eventPayload struct {
 		MarketID    string `json:"market_id"`
 		Title       string `json:"title"`
 		Description string `json:"description"`
@@ -621,18 +621,18 @@ func (h *WebhookHandler) HandleEventTradingEnd(w http.ResponseWriter, r *http.Re
 		FinalPool float64 `json:"final_pool"`
 		Link      string  `json:"link"`
 	}
-	if err := json.Unmarshal(body, &payload); err != nil {
+	if err := json.Unmarshal(requestBody, &eventPayload); err != nil {
 		http.Error(w, `{"error": "Invalid JSON"}`, http.StatusBadRequest)
 		return
 	}
-	outs := make([]string, 0, len(payload.Outcomes))
-	for _, o := range payload.Outcomes {
-		outs = append(outs, o.Name)
+	outcomeNames := make([]string, 0, len(eventPayload.Outcomes))
+	for _, outcome := range eventPayload.Outcomes {
+		outcomeNames = append(outcomeNames, outcome.Name)
 	}
-	market := models.Market{ID: payload.MarketID, Title: payload.Title, Description: payload.Description, Outcomes: outs, Volume: payload.FinalPool, Link: payload.Link}
-	msg := h.marketService.CreateTradingEndMessage(&market)
-	h.sendToSubscribedChannels(msg, &market)
-	h.sendToSubscribedUsers(msg, &market)
+	market := models.Market{ID: eventPayload.MarketID, Title: eventPayload.Title, Description: eventPayload.Description, Outcomes: outcomeNames, Volume: eventPayload.FinalPool, Link: eventPayload.Link}
+	messageBody := h.marketService.CreateTradingEndMessage(&market)
+	h.sendToSubscribedChannels(messageBody, &market)
+	h.sendToSubscribedUsers(messageBody, &market)
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusAccepted)
 	w.Write([]byte(`{"accepted": true}`))
