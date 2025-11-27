@@ -12,14 +12,15 @@ import (
 
 // MarketService defines the interface for market-related operations
 type MarketService interface {
-	FetchMarket(marketID string) (*models.Market, error)
-	FetchAllMarkets() ([]*models.Market, error)
-	CreateMarketAnnouncement(market *models.Market) string
-	CreateMarketUpdateMessage(market *models.Market) string
-	CreateTradingStartMessage(market *models.Market) string
-	CreateTradingEndMessage(market *models.Market) string
-	CreateMarketResolutionMessage(market *models.Market) string
-	ShouldSendUpdate(market *models.Market, frequency string, lastUpdate time.Time) bool
+    FetchMarket(marketID string) (*models.Market, error)
+    FetchAllMarkets() ([]*models.Market, error)
+    CreateMarketAnnouncement(market *models.Market) string
+    CreateMarketUpdateMessage(market *models.Market) string
+    CreateTradingStartMessage(market *models.Market) string
+    CreateTradingEndMessage(market *models.Market) string
+    CreateMarketResolutionMessage(market *models.Market) string
+    CreateMarketBuyMessage(marketID string, title string, amount float64, outcome string, buyer string, link string) string
+    ShouldSendUpdate(market *models.Market, frequency string, lastUpdate time.Time) bool
 }
 
 // MarketServiceImpl implements MarketService
@@ -226,6 +227,26 @@ func (s *MarketServiceImpl) CreateMarketResolutionMessage(market *models.Market)
 		resolution,
 		market.Link,
 	)
+}
+
+func (s *MarketServiceImpl) CreateMarketBuyMessage(marketID string, title string, amount float64, outcome string, buyer string, link string) string {
+    buyerText := buyer
+    if buyerText == "" {
+        buyerText = "Anonymous"
+    }
+    return fmt.Sprintf(
+        "💸 **MARKET BUY** 💸\n\n"+
+            "**%s**\n\n"+
+            "Buyer: %s\n"+
+            "Amount: $%.2f\n"+
+            "Outcome: %s\n\n"+
+            "🔗 [View on Coral Markets](%s)",
+        title,
+        buyerText,
+        amount,
+        outcome,
+        link,
+    )
 }
 
 // ShouldSendUpdate determines if an update should be sent based on frequency settings

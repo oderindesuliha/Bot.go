@@ -1,7 +1,10 @@
 package services
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
+	"time"
 
 	"coral-bot/discord_bot/internal/models"
 	"coral-bot/discord_bot/internal/repository"
@@ -25,6 +28,13 @@ type SubscriptionService interface {
 	// Notification logic
 	ShouldNotifyUser(subscription *models.Subscription, market *models.Market) bool
 	SendNotificationToUser(discordUserID string, message string) error
+
+	// Webhook registration management
+	RegisterWebhook(registration *models.WebhookRegistration) (*models.WebhookRegistration, error)
+	UnregisterWebhook(id string) error
+	GetWebhookRegistration(id string) (*models.WebhookRegistration, error)
+	ListWebhookRegistrations() ([]*models.WebhookRegistration, error)
+	ListWebhookRegistrationsByChannel(channelID string) ([]*models.WebhookRegistration, error)
 }
 
 // SubscriptionServiceImpl implements SubscriptionService
@@ -168,4 +178,55 @@ func (s *SubscriptionServiceImpl) SendNotificationToUser(discordUserID string, m
 	// This would be implemented with actual Discord DM sending
 	s.logger.Info(fmt.Sprintf("Would send DM to user %s: %s", discordUserID, message))
 	return nil
+}
+
+// helper to create a secure random id
+func generateID() (string, error) {
+	b := make([]byte, 12)
+	if _, err := rand.Read(b); err != nil {
+		return "", err
+	}
+	return hex.EncodeToString(b), nil
+}
+
+// RegisterWebhook registers a webhook and persists it
+func (s *SubscriptionServiceImpl) RegisterWebhook(registration *models.WebhookRegistration) (*models.WebhookRegistration, error) {
+	// generate a simple id and set createdAt
+	// use time.Now().UnixNano() and fmt.Sprintf random hex
+	// generate id and timestamp
+	idBytes, err := generateID()
+	if err != nil {
+		return nil, fmt.Errorf("failed to generate id: %w", err)
+	}
+	registration.ID = "wh_" + idBytes
+	registration.CreatedAt = time.Now()
+
+	if registration.Frequency == "" {
+		registration.Frequency = "medium"
+	}
+
+	if err := s.repo.SaveWebhookRegistration(registration); err != nil {
+		return nil, fmt.Errorf("failed to save webhook registration: %w", err)
+	}
+	return registration, nil
+}
+
+// UnregisterWebhook removes a webhook registration
+func (s *SubscriptionServiceImpl) UnregisterWebhook(id string) error {
+	return s.repo.DeleteWebhookRegistration(id)
+}
+
+// GetWebhookRegistration returns a registration by id
+func (s *SubscriptionServiceImpl) GetWebhookRegistration(id string) (*models.WebhookRegistration, error) {
+	return s.repo.GetWebhookRegistration(id)
+}
+
+// ListWebhookRegistrations lists all registrations
+func (s *SubscriptionServiceImpl) ListWebhookRegistrations() ([]*models.WebhookRegistration, error) {
+	return s.repo.GetAllWebhookRegistrations()
+}
+
+// ListWebhookRegistrationsByChannel lists registrations for a channel
+func (s *SubscriptionServiceImpl) ListWebhookRegistrationsByChannel(channelID string) ([]*models.WebhookRegistration, error) {
+	return s.repo.GetWebhookRegistrationsByChannel(channelID)
 }

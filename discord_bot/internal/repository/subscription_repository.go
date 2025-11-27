@@ -16,12 +16,20 @@ type SubscriptionRepository interface {
 	GetChannelConfig(channelID string) (*models.ChannelConfig, error)
 	SaveChannelConfig(config *models.ChannelConfig) error
 	GetAllChannelConfigs() ([]*models.ChannelConfig, error)
+
+	// Webhook registration methods
+	SaveWebhookRegistration(registration *models.WebhookRegistration) error
+	GetWebhookRegistration(id string) (*models.WebhookRegistration, error)
+	DeleteWebhookRegistration(id string) error
+	GetAllWebhookRegistrations() ([]*models.WebhookRegistration, error)
+	GetWebhookRegistrationsByChannel(channelID string) ([]*models.WebhookRegistration, error)
 }
 
 // InMemorySubscriptionRepository implements SubscriptionRepository using in-memory storage
 type InMemorySubscriptionRepository struct {
 	subscriptions map[string]*models.Subscription
 	channels      map[string]*models.ChannelConfig
+	webhooks      map[string]*models.WebhookRegistration
 	mutex         sync.RWMutex
 }
 
@@ -30,6 +38,7 @@ func NewInMemorySubscriptionRepository() *InMemorySubscriptionRepository {
 	return &InMemorySubscriptionRepository{
 		subscriptions: make(map[string]*models.Subscription),
 		channels:      make(map[string]*models.ChannelConfig),
+		webhooks:      make(map[string]*models.WebhookRegistration),
 	}
 }
 
@@ -122,4 +131,61 @@ func (r *InMemorySubscriptionRepository) GetAllChannelConfigs() ([]*models.Chann
 	}
 
 	return configs, nil
+}
+
+// SaveWebhookRegistration stores or updates a webhook registration
+func (r *InMemorySubscriptionRepository) SaveWebhookRegistration(registration *models.WebhookRegistration) error {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	r.webhooks[registration.ID] = registration
+	return nil
+}
+
+// GetWebhookRegistration retrieves a webhook registration by id
+func (r *InMemorySubscriptionRepository) GetWebhookRegistration(id string) (*models.WebhookRegistration, error) {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+
+	reg, exists := r.webhooks[id]
+	if !exists {
+		return nil, nil
+	}
+	return reg, nil
+}
+
+// DeleteWebhookRegistration deletes a webhook registration by id
+func (r *InMemorySubscriptionRepository) DeleteWebhookRegistration(id string) error {
+	r.mutex.Lock()
+	defer r.mutex.Unlock()
+
+	delete(r.webhooks, id)
+	return nil
+}
+
+// GetAllWebhookRegistrations returns all webhook registrations
+func (r *InMemorySubscriptionRepository) GetAllWebhookRegistrations() ([]*models.WebhookRegistration, error) {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+
+	regs := make([]*models.WebhookRegistration, 0, len(r.webhooks))
+	for _, reg := range r.webhooks {
+		regs = append(regs, reg)
+	}
+
+	return regs, nil
+}
+
+// GetWebhookRegistrationsByChannel returns registrations for a specific channel
+func (r *InMemorySubscriptionRepository) GetWebhookRegistrationsByChannel(channelID string) ([]*models.WebhookRegistration, error) {
+	r.mutex.RLock()
+	defer r.mutex.RUnlock()
+
+	regs := []*models.WebhookRegistration{}
+	for _, reg := range r.webhooks {
+		if reg.ChannelID == channelID {
+			regs = append(regs, reg)
+		}
+	}
+	return regs, nil
 }

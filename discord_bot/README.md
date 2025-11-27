@@ -54,6 +54,20 @@ The bot exposes the following webhook endpoints to receive notifications from th
 - `POST /webhooks/trading_ended` - Trading ended
 - `POST /webhooks/market_resolved` - Market resolved
 
+### Discord webhook registration (admin)
+These endpoints allow channel admins / backend to register and manage Discord webhook URLs for posting market events.
+
+- `POST /discord/webhooks/register` - Register a channel webhook (admin)
+   - Request JSON: { channel_id: string, webhook_url: string, events?: [string], frequency?: "low|medium|high", allowed_categories?: [string] }
+   - Response (201): created webhook registration object { id, channel_id, webhook_url, events, frequency, allowed_categories, created_at }
+
+- `DELETE /discord/webhooks/unregister` - Unregister a webhook
+   - Request JSON: { id: string }
+   - Response (200): { ok: true }
+
+- `GET /discord/webhooks` - List registered webhooks (admin)
+   - Response (200): array of webhook registration objects
+
 ## Architecture
 
 The bot follows a layered architecture pattern:
