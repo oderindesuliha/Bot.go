@@ -19,6 +19,7 @@ type MarketService interface {
 	CreateTradingStartMessage(market *models.Market) string
 	CreateTradingEndMessage(market *models.Market) string
 	CreateMarketResolutionMessage(market *models.Market) string
+	CreateMarketBuyMessage(marketID string, title string, amount float64, outcome string, buyer string, link string) string
 	ShouldSendUpdate(market *models.Market, frequency string, lastUpdate time.Time) bool
 }
 
@@ -39,9 +40,9 @@ func NewMarketService(baseURL string, logger *utils.Logger) *MarketServiceImpl {
 }
 
 // FetchMarket fetches a market by ID from the backend API
-func (s *MarketServiceImpl) FetchMarket(marketID string) (*models.Market, error) {
-	if s.baseURL == "" {
-		s.logger.Warning("Backend URL not configured, returning mock market data")
+func (service *MarketServiceImpl) FetchMarket(marketID string) (*models.Market, error) {
+	if service.baseURL == "" {
+		service.logger.Warning("Backend URL not configured, returning mock market data")
 		// Return mock data for testing
 		return &models.Market{
 			ID:          marketID,
@@ -59,8 +60,8 @@ func (s *MarketServiceImpl) FetchMarket(marketID string) (*models.Market, error)
 		}, nil
 	}
 
-	url := fmt.Sprintf("%s/markets/%s", s.baseURL, marketID)
-	resp, err := s.client.Get(url)
+	url := fmt.Sprintf("%s/markets/%s", service.baseURL, marketID)
+	resp, err := service.client.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch market: %w", err)
 	}
@@ -79,9 +80,9 @@ func (s *MarketServiceImpl) FetchMarket(marketID string) (*models.Market, error)
 }
 
 // FetchAllMarkets fetches all markets from the backend API
-func (s *MarketServiceImpl) FetchAllMarkets() ([]*models.Market, error) {
-	if s.baseURL == "" {
-		s.logger.Warning("Backend URL not configured, returning mock markets")
+func (service *MarketServiceImpl) FetchAllMarkets() ([]*models.Market, error) {
+	if service.baseURL == "" {
+		service.logger.Warning("Backend URL not configured, returning mock markets")
 		// Return mock data for testing
 		return []*models.Market{
 			{
@@ -115,8 +116,8 @@ func (s *MarketServiceImpl) FetchAllMarkets() ([]*models.Market, error) {
 		}, nil
 	}
 
-	url := fmt.Sprintf("%s/markets", s.baseURL)
-	resp, err := s.client.Get(url)
+	url := fmt.Sprintf("%s/markets", service.baseURL)
+	resp, err := service.client.Get(url)
 	if err != nil {
 		return nil, fmt.Errorf("failed to fetch markets: %w", err)
 	}
@@ -135,7 +136,7 @@ func (s *MarketServiceImpl) FetchAllMarkets() ([]*models.Market, error) {
 }
 
 // CreateMarketAnnouncement creates a formatted announcement message for a new market
-func (s *MarketServiceImpl) CreateMarketAnnouncement(market *models.Market) string {
+func (service *MarketServiceImpl) CreateMarketAnnouncement(market *models.Market) string {
 	message := fmt.Sprintf(
 		"🎉 **NEW MARKET ALERT** 🎉\n\n"+
 			"**%s**\n"+
@@ -162,7 +163,7 @@ func (s *MarketServiceImpl) CreateMarketAnnouncement(market *models.Market) stri
 }
 
 // CreateMarketUpdateMessage creates a formatted update message for a market
-func (s *MarketServiceImpl) CreateMarketUpdateMessage(market *models.Market) string {
+func (service *MarketServiceImpl) CreateMarketUpdateMessage(market *models.Market) string {
 	message := fmt.Sprintf(
 		"📈 **MARKET UPDATE** 📈\n\n"+
 			"**%s**\n\n"+
@@ -187,7 +188,7 @@ func (s *MarketServiceImpl) CreateMarketUpdateMessage(market *models.Market) str
 }
 
 // CreateTradingStartMessage creates a message for when trading starts
-func (s *MarketServiceImpl) CreateTradingStartMessage(market *models.Market) string {
+func (service *MarketServiceImpl) CreateTradingStartMessage(market *models.Market) string {
 	return fmt.Sprintf(
 		"🟢 **TRADING STARTED** 🟢\n\n"+
 			"**%s**\n\n"+
@@ -199,7 +200,7 @@ func (s *MarketServiceImpl) CreateTradingStartMessage(market *models.Market) str
 }
 
 // CreateTradingEndMessage creates a message for when trading ends
-func (s *MarketServiceImpl) CreateTradingEndMessage(market *models.Market) string {
+func (service *MarketServiceImpl) CreateTradingEndMessage(market *models.Market) string {
 	return fmt.Sprintf(
 		"🔴 **TRADING CLOSED** 🔴\n\n"+
 			"**%s**\n\n"+
@@ -211,7 +212,7 @@ func (s *MarketServiceImpl) CreateTradingEndMessage(market *models.Market) strin
 }
 
 // CreateMarketResolutionMessage creates a message for when a market is resolved
-func (s *MarketServiceImpl) CreateMarketResolutionMessage(market *models.Market) string {
+func (service *MarketServiceImpl) CreateMarketResolutionMessage(market *models.Market) string {
 	resolution := "Market resolved"
 	if market.ResolvedOutcome != "" {
 		resolution = fmt.Sprintf("Resolved: **%s**", market.ResolvedOutcome)
@@ -228,8 +229,28 @@ func (s *MarketServiceImpl) CreateMarketResolutionMessage(market *models.Market)
 	)
 }
 
+func (s *MarketServiceImpl) CreateMarketBuyMessage(marketID string, title string, amount float64, outcome string, buyer string, link string) string {
+	buyerText := buyer
+	if buyerText == "" {
+		buyerText = "Anonymous"
+	}
+	return fmt.Sprintf(
+		"💸 **MARKET BUY** 💸\n\n"+
+			"**%s**\n\n"+
+			"Buyer: %s\n"+
+			"Amount: $%.2f\n"+
+			"Outcome: %s\n\n"+
+			"🔗 [View on Coral Markets](%s)",
+		title,
+		buyerText,
+		amount,
+		outcome,
+		link,
+	)
+}
+
 // ShouldSendUpdate determines if an update should be sent based on frequency settings
-func (s *MarketServiceImpl) ShouldSendUpdate(market *models.Market, frequency string, lastUpdate time.Time) bool {
+func (service *MarketServiceImpl) ShouldSendUpdate(market *models.Market, frequency string, lastUpdate time.Time) bool {
 	if market.Status != "active" {
 		return false
 	}
